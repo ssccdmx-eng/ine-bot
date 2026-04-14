@@ -85,8 +85,8 @@ async function generarPDF(chatId, imageUrl) {
 
   const data = userData[chatId];
 
-  const script = app.open("https://github.com/ssccdmx-eng/inebot/raw/main/INE-2020.psd");
-var doc = app.activeDocument;
+  const script = `
+var doc = app.open("https://github.com/ssccdmx-eng/inebot/raw/main/INE-2020.psd");
 
 function setText(n,v){
   try{ doc.layers.getByName(n).textItem.contents = v }catch(e){}
@@ -98,47 +98,45 @@ setText("DOMICILIO","${data.domicilio}");
 setText("CURP","${data.curp}");
 setText("CLAVE","${data.clave}");
 
-// ===== FOTO =====
+// FOTO
 var img = app.open("${imageUrl}");
 img.activeLayer.duplicate(doc);
 img.close();
 
 var newLayer = doc.activeLayer;
-var target;
+
 try {
-  target = doc.layers.getByName("perfil");
+  var target = doc.layers.getByName("perfil");
+
+  newLayer.move(target, ElementPlacement.PLACEBEFORE);
+
+  var b = newLayer.bounds;
+  var w = b[2]-b[0];
+  var h = b[3]-b[1];
+
+  var tb = target.bounds;
+  var tw = tb[2]-tb[0];
+  var th = tb[3]-tb[1];
+
+  var scale = Math.max(tw/w, th/h) * 100;
+  newLayer.resize(scale, scale);
+
+  b = newLayer.bounds;
+  var dx = (tb[0]+tw/2) - (b[0]+(b[2]-b[0])/2);
+  var dy = (tb[1]+th/2) - (b[1]+(b[3]-b[1])/2);
+
+  newLayer.translate(dx, dy);
+
+  target.remove();
+  newLayer.name = "perfil";
+
 } catch(e) {
-  throw "No existe capa perfil";
+  // fallback si no existe capa
 }
 
-newLayer.move(target, ElementPlacement.PLACEBEFORE);
-
-// dimensiones
-var b = newLayer.bounds;
-var w = b[2]-b[0];
-var h = b[3]-b[1];
-
-var tb = target.bounds;
-var tw = tb[2]-tb[0];
-var th = tb[3]-tb[1];
-
-// escala tipo cover
-var scale = Math.max(tw/w, th/h) * 100;
-newLayer.resize(scale, scale);
-
-// centrar
-b = newLayer.bounds;
-var dx = (tb[0]+tw/2) - (b[0]+(b[2]-b[0])/2);
-var dy = (tb[1]+th/2) - (b[1]+(b[3]-b[1])/2);
-
-newLayer.translate(dx, dy);
-
-// eliminar placeholder
-target.remove();
-newLayer.name = "perfil";
-
-// ===== EXPORT =====
+// EXPORT
 doc.saveToOE("pdf");
+`;
 
   try {
 const response = await axios.post(
