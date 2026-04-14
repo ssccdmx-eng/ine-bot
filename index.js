@@ -17,8 +17,7 @@ bot.on('message', async (msg) => {
 
   const data = userData[chatId];
 
-  if (!data.nombre) {
-const partes = msg.text.split(" ");
+const partes = msg.text.toUpperCase().split(" ");
 
 data.nombre = partes[0] || "";
 data.paterno = partes[1] || "";
