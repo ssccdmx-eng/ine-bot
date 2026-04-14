@@ -16,7 +16,7 @@ async function generarPDF(data) {
 
   const barcodeBase64 = `data:image/png;base64,${barcode.toString('base64')}`;
 
-  const mrz = `${data.curp}<<${data.nombre}${data.paterno}${data.materno}`.toUpperCase();
+const mrz = `${data.paterno}<<${data.materno}<<${data.nombre}<<<<${data.curp}`;
 
   let html = fs.readFileSync('./template_full.html', 'utf8');
 
