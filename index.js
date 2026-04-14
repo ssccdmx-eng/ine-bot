@@ -74,7 +74,7 @@ bot.on('message', async (msg) => {
   else if (step === 'clave') {
     userData[chatId].clave = msg.text;
     userData[chatId].step = 'foto';
-    bot.sendMessage(chatId, "Env�a la foto:");
+    bot.sendMessage(chatId, "Envía la foto:");
   }
 });
 
@@ -97,25 +97,51 @@ async function generarPDF(chatId, imageUrl) {
   setText("CURP","${data.curp}");
   setText("CLAVE","${data.clave}");
 
-  // ===== FOTO (REEMPLAZO MEJORADO) =====
-  var img = app.open("${imageUrl}");
+// ===== FOTO (AJUSTE PROFESIONAL) =====
+var img = app.open("${imageUrl}");
+var docW = doc.width;
+var docH = doc.height;
 
-  var target = doc.layers.getByName("perfil");
+// copiar imagen
+img.activeLayer.duplicate(doc);
+img.close();
 
-  app.activeDocument = img;
-  img.activeLayer.duplicate(doc);
+var newLayer = doc.activeLayer;
 
-  app.activeDocument = doc;
-  var newLayer = doc.activeLayer;
+// buscar capa destino
+var target = doc.layers.getByName("perfil");
 
-  newLayer.name = "perfil";
+// mover encima del target
+newLayer.move(target, ElementPlacement.PLACEBEFORE);
 
-  // opcional: eliminar anterior si existe duplicado
-  try {
-    doc.layers.getByName("perfil copia").remove();
-  } catch(e){}
+// ===== ESCALAR AUTOMÁTICO =====
+var bounds = newLayer.bounds;
+var w = bounds[2] - bounds[0];
+var h = bounds[3] - bounds[1];
 
-  img.close();
+// tamaño del marco (perfil)
+var tb = target.bounds;
+var tw = tb[2] - tb[0];
+var th = tb[3] - tb[1];
+
+// escala tipo "cover"
+var scale = Math.max(tw / w, th / h) * 100;
+newLayer.resize(scale, scale);
+
+// centrar
+bounds = newLayer.bounds;
+var dx = (tb[0] + tw/2) - (bounds[0] + (bounds[2]-bounds[0])/2);
+var dy = (tb[1] + th/2) - (bounds[1] + (bounds[3]-bounds[1])/2);
+
+newLayer.translate(dx, dy);
+
+// eliminar placeholder viejo
+try {
+    target.remove();
+} catch(e){}
+
+// renombrar
+newLayer.name = "perfil";
 
   // ===== EXPORT =====
   doc.saveToOE("pdf");
