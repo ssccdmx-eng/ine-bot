@@ -35,7 +35,6 @@ if (msg.photo) {
 
     // 🔥 URL directa (NO .href)
     const fileUrl = await bot.getFileLink(fileId);
-const fileUrl = await bot.getFileLink(fileId);
 const res = await axios.get(fileUrl, { responseType: 'arraybuffer' });
     fs.writeFileSync('foto.jpg', res.data);
 
