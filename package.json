@@ -1,5 +1,5 @@
 {
-  "name": "inebot",
+  "name": "ine-bot",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -7,7 +7,9 @@
   },
   "dependencies": {
     "node-telegram-bot-api": "^0.61.0",
-    "axios": "^1.6.0",
-    "cloudinary": "^1.41.0"
+    "puppeteer": "^22.0.0",
+    "qrcode": "^1.5.4",
+    "bwip-js": "^4.1.1",
+    "axios": "^1.6.0"
   }
 }
