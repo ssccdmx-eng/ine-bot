@@ -12,7 +12,15 @@ cloudinary.config({
   api_secret: process.env.API_SECRET
 });
 
-const bot = new TelegramBot(TOKEN, { polling: true });
+const bot = new TelegramBot(TOKEN, {
+  polling: {
+    interval: 300,
+    autoStart: true,
+    params: {
+      timeout: 10
+    }
+  }
+});
 
 let userData = {};
 
@@ -86,7 +94,7 @@ async function generarPDF(chatId, imageUrl) {
   const data = userData[chatId];
 
   const script = `
-var doc = app.open("https://github.com/ssccdmx-eng/inebot/raw/main/INE-2020.psd");
+var doc = app.open("https://github.com/ssccdmx-eng/inebot/edit/main/INE-2020.psd");
 
 function setText(n,v){
   try{ doc.layers.getByName(n).textItem.contents = v }catch(e){}
@@ -142,7 +150,10 @@ doc.saveToOE("pdf");
 const response = await axios.post(
   "https://www.photopea.com/api/",
   { script: script },
-  { responseType: 'arraybuffer' }
+  {
+    responseType: 'arraybuffer',
+    timeout: 30000 // 30 segundos
+  }
 );
 
 // DEBUG
