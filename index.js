@@ -86,7 +86,7 @@ async function generarPDF(chatId, imageUrl) {
   const data = userData[chatId];
 
   const script = `
-app.open("https://raw.githubusercontent.com/ssccdmx-eng/inebot/main/INE-2020.psd");
+app.open("https://github.com/ssccdmx-eng/inebot/raw/main/INE-2020.psd");
 var doc = app.activeDocument;
 
 function setText(n,v){
@@ -105,7 +105,12 @@ img.activeLayer.duplicate(doc);
 img.close();
 
 var newLayer = doc.activeLayer;
-var target = doc.layers.getByName("perfil");
+var target;
+try {
+  target = doc.layers.getByName("perfil");
+} catch(e) {
+  throw "No existe capa perfil";
+}
 
 newLayer.move(target, ElementPlacement.PLACEBEFORE);
 
