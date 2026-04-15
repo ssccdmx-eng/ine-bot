@@ -53,7 +53,7 @@ data.materno = partes[2] || "";
     data.fotoMini = data.foto;
     data.firma = data.foto;
 
-    await generarPDF(data);
+await generarPDF(chatId, imageUrl, userData[chatId]);
 
     await bot.sendDocument(chatId, "resultado.pdf");
   }
