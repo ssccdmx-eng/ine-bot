@@ -1,45 +1,29 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
-const QRCode = require('qrcode');
-const bwipjs = require('bwip-js');
+const path = require('path');
 
-async function generarPDF(chatId, data) {
-
-  const qr = await QRCode.toDataURL(data.curp);
-
-  const barcode = await bwipjs.toBuffer({
-    bcid: 'code128',
-    text: data.curp,
-    scale: 3,
-    height: 10
-  });
-
-  const barcodeBase64 = `data:image/png;base64,${barcode.toString('base64')}`;
-
-  const mrz = `${data.paterno}<<${data.materno}<<${data.nombre}<<<<${data.curp}`;
+module.exports = async function generarPDF(data) {
 
   let html = fs.readFileSync('./template_full.html', 'utf8');
 
-  const allData = {
-    ...data,
-    qr,
-    barcode: barcodeBase64,
-    mrz
-  };
-
-  const allData = {
-  ...data,
-  foto: data.foto || "",
-  fotoMini: data.fotoMini || "",
-  firma: data.firma || "",
-  qr,
-  barcode: barcodeBase64,
-  mrz
-};
-
-  Object.keys(allData).forEach(key => {
-    html = html.replaceAll(`{{${key}}}`, allData[key] || '');
-  });
+  html = html
+    .replace('{{foto}}', data.foto || '')
+    .replace('{{fotoMini}}', data.fotoMini || '')
+    .replace('{{firma}}', data.firma || '')
+    .replace('{{paterno}}', data.paterno || '')
+    .replace('{{materno}}', data.materno || '')
+    .replace('{{nombre}}', data.nombre || '')
+    .replace('{{domicilio}}', data.domicilio || '')
+    .replace('{{curp}}', data.curp || '')
+    .replace('{{clave}}', data.clave || '')
+    .replace('{{sexo}}', data.sexo || '')
+    .replace('{{estado}}', data.estado || '')
+    .replace('{{registro}}', data.registro || '')
+    .replace('{{seccion}}', data.seccion || '')
+    .replace('{{vigencia}}', data.vigencia || '')
+    .replace(/{{qr}}/g, '')
+    .replace('{{barcode}}', '')
+    .replace('{{mrz}}', '');
 
   const browser = await puppeteer.launch({
     args: ['--no-sandbox']
@@ -49,14 +33,16 @@ async function generarPDF(chatId, data) {
 
   await page.setContent(html, { waitUntil: 'networkidle0' });
 
+  const filePath = path.join(__dirname, `output.pdf`);
+
   await page.pdf({
-    path: 'resultado.pdf',
+    path: filePath,
     width: '1000px',
-    height: '1300px',
+    height: '630px',
     printBackground: true
   });
 
   await browser.close();
-}
 
-module.exports = generarPDF;
+  return filePath;
+};
