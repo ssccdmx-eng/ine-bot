@@ -2,9 +2,8 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 const QRCode = require('qrcode');
 const bwipjs = require('bwip-js');
-const mrz = `${data.paterno}<<${data.materno}<<${data.nombre}<<<<${data.curp}`;
 
-async function generarPDF(data) {
+async function generarPDF(chatId, imageUrl, data) 
 
   const qr = await QRCode.toDataURL(data.curp);
 
@@ -20,13 +19,6 @@ async function generarPDF(data) {
 const mrz = `${data.paterno}<<${data.materno}<<${data.nombre}<<<<${data.curp}`;
 
   let html = fs.readFileSync('./template_full.html', 'utf8');
-
-  const allData = {
-    ...data,
-    qr,
-    barcode: barcodeBase64,
-    mrz
-  };
 
   Object.keys(allData).forEach(key => {
     html = html.replaceAll(`{{${key}}}`, allData[key] || '');
