@@ -27,6 +27,16 @@ async function generarPDF(chatId, data) {
     mrz
   };
 
+  const allData = {
+  ...data,
+  foto: data.foto || "",
+  fotoMini: data.fotoMini || "",
+  firma: data.firma || "",
+  qr,
+  barcode: barcodeBase64,
+  mrz
+};
+
   Object.keys(allData).forEach(key => {
     html = html.replaceAll(`{{${key}}}`, allData[key] || '');
   });
