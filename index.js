@@ -35,6 +35,40 @@ bot.on('message', async (msg) => {
   if (data.step === 'clave') {
     data.clave = msg.text;
 
+    if (msg.photo) {
+  try {
+    const fileId = msg.photo.pop().file_id;
+    const file = await bot.getFileLink(fileId);
+
+    const imageUrl = file.href; // URL directa de Telegram
+
+    const data = userData[chatId];
+
+    // 👇 AQUÍ GUARDAS LAS IMÁGENES
+    if (!data.foto) {
+      data.foto = imageUrl;
+      return bot.sendMessage(chatId, "Ahora envía la FOTO MINI:");
+    }
+
+    if (!data.fotoMini) {
+      data.fotoMini = imageUrl;
+      return bot.sendMessage(chatId, "Ahora envía la FIRMA:");
+    }
+
+    if (!data.firma) {
+      data.firma = imageUrl;
+
+      // 🔥 YA TIENES TODO → GENERAR PDF
+      await generarPDF(chatId, data);
+      return bot.sendDocument(chatId, "resultado.pdf");
+    }
+
+  } catch (err) {
+    console.error(err);
+    bot.sendMessage(chatId, "Error procesando imagen");
+  }
+}
+
     // datos fijos demo
     data.sexo = "H";
     data.estado = "CDMX";
@@ -42,6 +76,16 @@ bot.on('message', async (msg) => {
     data.seccion = "1234";
     data.vigencia = "2030";
 
+const allData = {
+  ...data,
+  foto: data.foto || "",
+  fotoMini: data.fotoMini || "",
+  firma: data.firma || "",
+  qr,
+  barcode: barcodeBase64,
+  mrz
+};
+    
     try {
       await generarPDF(chatId, data);
       await bot.sendDocument(chatId, "resultado.pdf");
