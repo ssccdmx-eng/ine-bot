@@ -1,97 +1,134 @@
 const TelegramBot = require('node-telegram-bot-api');
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 const generarPDF = require('./generate');
 
-const bot = new TelegramBot(process.env.TOKEN, { polling: true });
+const TOKEN = process.env.TOKEN;
+const bot = new TelegramBot(TOKEN, { polling: true });
 
 let userData = {};
 
+if (!fs.existsSync('./tmp')) fs.mkdirSync('./tmp');
+
+// ===== START =====
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  userData[chatId] = { step: 'nombre' };
-  bot.sendMessage(chatId, "Nombre completo:");
+
+  userData[chatId] = {
+    step: 'paterno'
+  };
+
+  bot.sendMessage(chatId, "Apellido paterno:");
 });
 
+// ===== MENSAJES =====
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   if (!userData[chatId]) return;
 
-  const data = userData[chatId];
+  let data = userData[chatId];
 
-  if (data.step === 'nombre') {
-    const partes = msg.text.toUpperCase().split(" ");
-    data.nombre = partes[0] || "";
-    data.paterno = partes[1] || "";
-    data.materno = partes[2] || "";
-    data.step = 'curp';
-    return bot.sendMessage(chatId, "CURP:");
-  }
-
-  if (data.step === 'curp') {
-    data.curp = msg.text;
-    data.step = 'clave';
-    return bot.sendMessage(chatId, "Clave de elector:");
-  }
-
-  if (data.step === 'clave') {
-    data.clave = msg.text;
-
-    if (msg.photo) {
   try {
-    const fileId = msg.photo.pop().file_id;
-    const file = await bot.getFileLink(fileId);
 
-    const imageUrl = file.href; // URL directa de Telegram
+    // ===== FOTO =====
+    if (msg.photo) {
+      if (data.step !== 'foto') return;
 
-    const data = userData[chatId];
+      const fileId = msg.photo[msg.photo.length - 1].file_id;
+      const fileUrl = await bot.getFileLink(fileId);
 
-    // 👇 AQUÍ GUARDAS LAS IMÁGENES
-    if (!data.foto) {
-      data.foto = imageUrl;
-      return bot.sendMessage(chatId, "Ahora envía la FOTO MINI:");
+      const res = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+      const filePath = `./tmp/${chatId}.jpg`;
+
+      fs.writeFileSync(filePath, res.data);
+
+      // base64
+      const base64 = fs.readFileSync(filePath, { encoding: 'base64' });
+      const image = `data:image/jpeg;base64,${base64}`;
+
+      data.foto = image;
+      data.fotoMini = image;
+      data.firma = image;
+
+      bot.sendMessage(chatId, "Generando PDF...");
+
+      const pdf = await generarPDF(data);
+
+      await bot.sendDocument(chatId, pdf);
+
+      return;
     }
 
-    if (!data.fotoMini) {
-      data.fotoMini = imageUrl;
-      return bot.sendMessage(chatId, "Ahora envía la FIRMA:");
+    // ===== FORMULARIO =====
+    if (data.step === 'paterno') {
+      data.paterno = msg.text;
+      data.step = 'materno';
+      return bot.sendMessage(chatId, "Apellido materno:");
     }
 
-    if (!data.firma) {
-      data.firma = imageUrl;
-
-      // 🔥 YA TIENES TODO → GENERAR PDF
-      await generarPDF(chatId, data);
-      return bot.sendDocument(chatId, "resultado.pdf");
+    if (data.step === 'materno') {
+      data.materno = msg.text;
+      data.step = 'nombre';
+      return bot.sendMessage(chatId, "Nombre:");
     }
 
-  } catch (err) {
-    console.error(err);
-    bot.sendMessage(chatId, "Error procesando imagen");
-  }
-}
-
-    // datos fijos demo
-    data.sexo = "H";
-    data.estado = "CDMX";
-    data.registro = "2020";
-    data.seccion = "1234";
-    data.vigencia = "2030";
-
-const allData = {
-  ...data,
-  foto: data.foto || "",
-  fotoMini: data.fotoMini || "",
-  firma: data.firma || "",
-  qr,
-  barcode: barcodeBase64,
-  mrz
-};
-    
-    try {
-      await generarPDF(chatId, data);
-      await bot.sendDocument(chatId, "resultado.pdf");
-    } catch (e) {
-      console.error(e);
-      bot.sendMessage(chatId, "Error generando PDF");
+    if (data.step === 'nombre') {
+      data.nombre = msg.text;
+      data.step = 'domicilio';
+      return bot.sendMessage(chatId, "Domicilio:");
     }
+
+    if (data.step === 'domicilio') {
+      data.domicilio = msg.text;
+      data.step = 'curp';
+      return bot.sendMessage(chatId, "CURP:");
+    }
+
+    if (data.step === 'curp') {
+      data.curp = msg.text;
+      data.step = 'clave';
+      return bot.sendMessage(chatId, "Clave:");
+    }
+
+    if (data.step === 'clave') {
+      data.clave = msg.text;
+      data.step = 'sexo';
+      return bot.sendMessage(chatId, "Sexo:");
+    }
+
+    if (data.step === 'sexo') {
+      data.sexo = msg.text;
+      data.step = 'estado';
+      return bot.sendMessage(chatId, "Estado:");
+    }
+
+    if (data.step === 'estado') {
+      data.estado = msg.text;
+      data.step = 'registro';
+      return bot.sendMessage(chatId, "Año de registro:");
+    }
+
+    if (data.step === 'registro') {
+      data.registro = msg.text;
+      data.step = 'seccion';
+      return bot.sendMessage(chatId, "Sección:");
+    }
+
+    if (data.step === 'seccion') {
+      data.seccion = msg.text;
+      data.step = 'vigencia';
+      return bot.sendMessage(chatId, "Vigencia:");
+    }
+
+    if (data.step === 'vigencia') {
+      data.vigencia = msg.text;
+      data.step = 'foto';
+      return bot.sendMessage(chatId, "Envía la foto:");
+    }
+
+  } catch (e) {
+    console.log(e);
+    bot.sendMessage(chatId, "Error procesando datos");
   }
 });
