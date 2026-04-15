@@ -23,7 +23,6 @@ data.nombre = partes[0] || "";
 data.paterno = partes[1] || "";
 data.materno = partes[2] || "";
     return bot.sendMessage(chatId, "Apellido paterno:");
-  }
 
   if (!data.paterno) {
     data.paterno = msg.text;
