@@ -6,161 +6,168 @@
 
 body {
   margin: 0;
+  background: #fff;
   font-family: Arial, sans-serif;
 }
 
+.page {
+  width: 1000px;
+}
+
+/* ===== TARJETAS ===== */
 .front, .back {
   position: relative;
   width: 1000px;
   height: 630px;
 }
 
-/* ===== IMAGEN BASE ===== */
+/* ===== BASE ===== */
 .base {
   position: absolute;
   width: 100%;
   height: 100%;
 }
 
-/* ===== FOTO PRINCIPAL ===== */
+/* ===== FOTO ===== */
 .foto {
   position: absolute;
-  top: 185px;
-  left: 90px;
-  width: 210px;
-  height: 260px;
+  top: 190px;
+  left: 95px;
+  width: 200px;
+  height: 255px;
   object-fit: cover;
-  border-radius: 8px;
 }
 
 /* ===== FOTO MINI ===== */
 .foto-mini {
   position: absolute;
-  top: 150px;
-  left: 825px;
-  width: 105px;
-  height: 125px;
+  top: 155px;
+  left: 820px;
+  width: 100px;
+  height: 120px;
   object-fit: cover;
 }
 
 /* ===== FIRMA ===== */
 .firma {
   position: absolute;
-  top: 460px;
+  top: 455px;
   left: 330px;
-  width: 240px;
-  height: 60px;
+  width: 230px;
+  height: 55px;
   object-fit: contain;
 }
 
-/* ===== TEXTOS ===== */
+/* ===== TEXTO BASE ===== */
 .text {
   position: absolute;
   color: #000;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-/* NOMBRE (orden INE real) */
+/* ===== NOMBRE ===== */
 .paterno {
-  top: 205px;
+  top: 210px;
   left: 320px;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: bold;
 }
 
 .materno {
-  top: 235px;
+  top: 240px;
   left: 320px;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: bold;
 }
 
 .nombre {
-  top: 265px;
+  top: 270px;
   left: 320px;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: bold;
 }
 
-/* DATOS */
+/* ===== DATOS ===== */
 .domicilio {
   top: 305px;
   left: 320px;
-  font-size: 14px;
   width: 420px;
+  font-size: 13px;
+  line-height: 15px;
 }
 
 .curp {
-  top: 445px;
+  top: 440px;
   left: 320px;
-  font-size: 16px;
+  font-size: 15px;
   letter-spacing: 2px;
 }
 
 .clave {
-  top: 475px;
+  top: 470px;
   left: 320px;
+  font-size: 15px;
+}
+
+/* ===== DERECHA ===== */
+.sexo {
+  top: 210px;
+  left: 780px;
   font-size: 16px;
 }
 
-.sexo {
-  top: 205px;
-  left: 800px;
-  font-size: 18px;
-}
-
-.estado {
-  top: 505px;
-  left: 320px;
-  font-size: 14px;
-}
-
-/* DERECHA */
 .registro {
-  top: 205px;
-  left: 560px;
-  font-size: 14px;
+  top: 210px;
+  left: 550px;
+  font-size: 13px;
 }
 
 .seccion {
-  top: 235px;
-  left: 560px;
-  font-size: 14px;
+  top: 240px;
+  left: 550px;
+  font-size: 13px;
 }
 
 .vigencia {
-  top: 265px;
-  left: 560px;
-  font-size: 14px;
+  top: 270px;
+  left: 550px;
+  font-size: 13px;
 }
 
-/* ===== REVERSO ===== */
+.estado {
+  top: 500px;
+  left: 320px;
+  font-size: 13px;
+}
+
+/* ===== BACK ===== */
 
 .qr1 {
   position: absolute;
   top: 200px;
   left: 120px;
-  width: 140px;
+  width: 130px;
 }
 
 .qr2 {
   position: absolute;
   top: 200px;
-  left: 320px;
-  width: 140px;
+  left: 300px;
+  width: 130px;
 }
 
 .qr3 {
   position: absolute;
   top: 200px;
-  left: 520px;
-  width: 140px;
+  left: 480px;
+  width: 130px;
 }
 
 .barcode {
   position: absolute;
-  bottom: 85px;
-  left: 180px;
-  width: 600px;
+  bottom: 90px;
+  left: 200px;
+  width: 580px;
 }
 
 .mrz {
@@ -168,8 +175,8 @@ body {
   bottom: 30px;
   left: 180px;
   font-family: monospace;
-  font-size: 16px;
-  letter-spacing: 3px;
+  font-size: 14px;
+  letter-spacing: 2px;
 }
 
 </style>
