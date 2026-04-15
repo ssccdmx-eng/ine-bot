@@ -2,6 +2,8 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
 
+console.log("DATA:", data);
+
 module.exports = async function generarPDF(data) {
 
   let html = fs.readFileSync('./template_full.html', 'utf8');
