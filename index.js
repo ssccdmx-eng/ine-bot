@@ -7,8 +7,8 @@ let userData = {};
 
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  userData[chatId] = {};
-  bot.sendMessage(chatId, "Nombre:");
+  userData[chatId] = { step: 'nombre' };
+  bot.sendMessage(chatId, "Nombre completo:");
 });
 
 bot.on('message', async (msg) => {
@@ -17,44 +17,37 @@ bot.on('message', async (msg) => {
 
   const data = userData[chatId];
 
-const partes = msg.text.toUpperCase().split(" ");
-
-data.nombre = partes[0] || "";
-data.paterno = partes[1] || "";
-data.materno = partes[2] || "";
-    return bot.sendMessage(chatId, "Apellido paterno:");
-
-  if (!data.paterno) {
-    data.paterno = msg.text;
-    return bot.sendMessage(chatId, "Apellido materno:");
-  }
-
-  if (!data.materno) {
-    data.materno = msg.text;
+  if (data.step === 'nombre') {
+    const partes = msg.text.toUpperCase().split(" ");
+    data.nombre = partes[0] || "";
+    data.paterno = partes[1] || "";
+    data.materno = partes[2] || "";
+    data.step = 'curp';
     return bot.sendMessage(chatId, "CURP:");
   }
 
-  if (!data.curp) {
+  if (data.step === 'curp') {
     data.curp = msg.text;
-    return bot.sendMessage(chatId, "Clave:");
+    data.step = 'clave';
+    return bot.sendMessage(chatId, "Clave de elector:");
   }
 
-  if (!data.clave) {
+  if (data.step === 'clave') {
     data.clave = msg.text;
 
-    // valores demo
+    // datos fijos demo
     data.sexo = "H";
     data.estado = "CDMX";
     data.registro = "2020";
     data.seccion = "1234";
     data.vigencia = "2030";
 
-    data.foto = "https://via.placeholder.com/200";
-    data.fotoMini = data.foto;
-    data.firma = data.foto;
-
-await generarPDF(chatId, imageUrl, userData[chatId]);
-
-    await bot.sendDocument(chatId, "resultado.pdf");
+    try {
+      await generarPDF(chatId, data);
+      await bot.sendDocument(chatId, "resultado.pdf");
+    } catch (e) {
+      console.error(e);
+      bot.sendMessage(chatId, "Error generando PDF");
+    }
   }
 });
