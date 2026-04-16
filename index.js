@@ -1,134 +1,93 @@
 const TelegramBot = require('node-telegram-bot-api');
-const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
-const generarPDF = require('./generate');
+const generatePDF = require('./generate');
 
-const TOKEN = process.env.TOKEN;
-const bot = new TelegramBot(TOKEN, { polling: true });
+const token = process.env.BOT_TOKEN;
+const bot = new TelegramBot(token, { polling: true });
 
-let userData = {};
+// ====== DATA TEMPORAL POR USUARIO ======
+const userData = {};
 
-if (!fs.existsSync('./tmp')) fs.mkdirSync('./tmp');
-
-// ===== START =====
+// ====== INICIO ======
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
 
-  userData[chatId] = {
-    step: 'paterno'
-  };
+  userData[chatId] = {};
 
-  bot.sendMessage(chatId, "Apellido paterno:");
+  bot.sendMessage(chatId, 'Ingresa tu NOMBRE:');
 });
 
-// ===== MENSAJES =====
+// ====== MENSAJES ======
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
+
   if (!userData[chatId]) return;
 
-  let data = userData[chatId];
+  const text = msg.text;
+
+  // flujo básico
+  if (!userData[chatId].nombre) {
+    userData[chatId].nombre = text;
+    return bot.sendMessage(chatId, 'Apellido paterno:');
+  }
+
+  if (!userData[chatId].paterno) {
+    userData[chatId].paterno = text;
+    return bot.sendMessage(chatId, 'Apellido materno:');
+  }
+
+  if (!userData[chatId].materno) {
+    userData[chatId].materno = text;
+    return bot.sendMessage(chatId, 'CURP:');
+  }
+
+  if (!userData[chatId].curp) {
+    userData[chatId].curp = text;
+    return bot.sendMessage(chatId, 'Domicilio:');
+  }
+
+  if (!userData[chatId].domicilio) {
+    userData[chatId].domicilio = text;
+
+    // valores fijos por ahora
+    userData[chatId].sexo = 'H';
+    userData[chatId].estado = 'CDMX';
+    userData[chatId].registro = '2020';
+    userData[chatId].seccion = '1234';
+    userData[chatId].vigencia = '2030';
+    userData[chatId].clave = 'ABC123456';
+
+    return bot.sendMessage(chatId, 'Ahora envía tu FOTO');
+  }
+});
+
+// ====== FOTO ======
+bot.on('photo', async (msg) => {
+  const chatId = msg.chat.id;
+
+  if (!userData[chatId]) return;
 
   try {
+    const photo = msg.photo[msg.photo.length - 1];
+    const file = await bot.getFile(photo.file_id);
 
-    // ===== FOTO =====
-    if (msg.photo) {
-      if (data.step !== 'foto') return;
+    const url = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
 
-      const fileId = msg.photo[msg.photo.length - 1].file_id;
-      const fileUrl = await bot.getFileLink(fileId);
+    // guardar imagen como base64
+    userData[chatId].foto = url;
+    userData[chatId].fotoMini = url;
+    userData[chatId].firma = url;
 
-      const res = await axios.get(fileUrl, { responseType: 'arraybuffer' });
-      const filePath = `./tmp/${chatId}.jpg`;
+    bot.sendMessage(chatId, 'Generando PDF...');
 
-      fs.writeFileSync(filePath, res.data);
+    // 👇 AQUÍ SE USA DATA CORRECTAMENTE
+    const pdf = await generatePDF(userData[chatId]);
 
-      // base64
-      const base64 = fs.readFileSync(filePath, { encoding: 'base64' });
-      const image = `data:image/jpeg;base64,${base64}`;
+    await bot.sendDocument(chatId, pdf);
 
-      data.foto = image;
-      data.fotoMini = image;
-      data.firma = image;
+    delete userData[chatId];
 
-      bot.sendMessage(chatId, "Generando PDF...");
-
-      const pdf = await generarPDF(data);
-
-      await bot.sendDocument(chatId, pdf);
-
-      return;
-    }
-
-    // ===== FORMULARIO =====
-    if (data.step === 'paterno') {
-      data.paterno = msg.text;
-      data.step = 'materno';
-      return bot.sendMessage(chatId, "Apellido materno:");
-    }
-
-    if (data.step === 'materno') {
-      data.materno = msg.text;
-      data.step = 'nombre';
-      return bot.sendMessage(chatId, "Nombre:");
-    }
-
-    if (data.step === 'nombre') {
-      data.nombre = msg.text;
-      data.step = 'domicilio';
-      return bot.sendMessage(chatId, "Domicilio:");
-    }
-
-    if (data.step === 'domicilio') {
-      data.domicilio = msg.text;
-      data.step = 'curp';
-      return bot.sendMessage(chatId, "CURP:");
-    }
-
-    if (data.step === 'curp') {
-      data.curp = msg.text;
-      data.step = 'clave';
-      return bot.sendMessage(chatId, "Clave:");
-    }
-
-    if (data.step === 'clave') {
-      data.clave = msg.text;
-      data.step = 'sexo';
-      return bot.sendMessage(chatId, "Sexo:");
-    }
-
-    if (data.step === 'sexo') {
-      data.sexo = msg.text;
-      data.step = 'estado';
-      return bot.sendMessage(chatId, "Estado:");
-    }
-
-    if (data.step === 'estado') {
-      data.estado = msg.text;
-      data.step = 'registro';
-      return bot.sendMessage(chatId, "Año de registro:");
-    }
-
-    if (data.step === 'registro') {
-      data.registro = msg.text;
-      data.step = 'seccion';
-      return bot.sendMessage(chatId, "Sección:");
-    }
-
-    if (data.step === 'seccion') {
-      data.seccion = msg.text;
-      data.step = 'vigencia';
-      return bot.sendMessage(chatId, "Vigencia:");
-    }
-
-    if (data.step === 'vigencia') {
-      data.vigencia = msg.text;
-      data.step = 'foto';
-      return bot.sendMessage(chatId, "Envía la foto:");
-    }
-
-  } catch (e) {
-    console.log(e);
-    bot.sendMessage(chatId, "Error procesando datos");
+  } catch (err) {
+    console.error(err);
+    bot.sendMessage(chatId, 'Error generando PDF');
   }
 });
