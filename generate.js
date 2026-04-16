@@ -4,7 +4,7 @@ const path = require('path');
 
 console.log("DATA:", data);
 
-module.exports = async function generarPDF(data) {
+module.exports = async function generateINE(data) {
 
   let html = fs.readFileSync('./template_full.html', 'utf8');
 const frontBase64 = fs.readFileSync('./front.png', { encoding: 'base64' });
