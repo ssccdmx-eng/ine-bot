@@ -1,22 +1,56 @@
 const fs = require('fs');
-const path = require('path');
 const puppeteer = require('puppeteer');
+const QRCode = require('qrcode');
+const bwipjs = require('bwip-js');
+const sharp = require('sharp');
 
 module.exports = async function generarPDF(data) {
 
-  console.log("DATA OK:", data); // ✅ ahora sí funciona
-
   let html = fs.readFileSync('./template_full.html', 'utf8');
 
-  // ===== IMÁGENES BASE (INE) =====
-  const frontBase64 = fs.readFileSync('./front.png', { encoding: 'base64' });
-  const backBase64 = fs.readFileSync('./back.png', { encoding: 'base64' });
+  // ===== BASE INE =====
+  const front = fs.readFileSync('./front.png', 'base64');
+  const back = fs.readFileSync('./back.png', 'base64');
 
   html = html
-    .replace('front.png', `data:image/png;base64,${frontBase64}`)
-    .replace('back.png', `data:image/png;base64,${backBase64}`);
+    .replace('front.png', `data:image/png;base64,${front}`)
+    .replace('back.png', `data:image/png;base64,${back}`);
 
-  // ===== DATOS =====
+  // ===== PROCESAR FOTO =====
+  async function processImage(base64) {
+    if (!base64) return '';
+
+    const buffer = Buffer.from(base64.split(',')[1], 'base64');
+
+    const processed = await sharp(buffer)
+      .resize(300, 400, { fit: 'cover' })
+      .jpeg()
+      .toBuffer();
+
+    return `data:image/jpeg;base64,${processed.toString('base64')}`;
+  }
+
+  const foto = await processImage(data.foto);
+  const fotoMini = await processImage(data.fotoMini);
+  const firma = await processImage(data.firma);
+
+  // ===== QR =====
+  const qr = await QRCode.toDataURL(data.curp || 'INE');
+
+  // ===== BARCODE =====
+  const barcodeBuffer = await bwipjs.toBuffer({
+    bcid: 'code128',
+    text: data.curp || 'INE123',
+    scale: 3,
+    height: 10
+  });
+
+  const barcode = `data:image/png;base64,${barcodeBuffer.toString('base64')}`;
+
+  // ===== MRZ =====
+  const mrz = `${data.nombre}<<${data.paterno}<<${data.materno}`;
+
+  // ===== REEMPLAZOS =====
   html = html
     .replace('{{nombre}}', data.nombre || '')
     .replace('{{paterno}}', data.paterno || '')
@@ -28,15 +62,15 @@ module.exports = async function generarPDF(data) {
     .replace('{{estado}}', data.estado || '')
     .replace('{{registro}}', data.registro || '')
     .replace('{{seccion}}', data.seccion || '')
-    .replace('{{vigencia}}', data.vigencia || '');
+    .replace('{{vigencia}}', data.vigencia || '')
+    .replace('{{foto}}', foto)
+    .replace('{{fotoMini}}', fotoMini)
+    .replace('{{firma}}', firma)
+    .replace('{{qr}}', qr)
+    .replace('{{barcode}}', barcode)
+    .replace('{{mrz}}', mrz);
 
-  // ===== IMÁGENES USUARIO =====
-  html = html
-    .replace('{{foto}}', data.foto || '')
-    .replace('{{fotoMini}}', data.fotoMini || '')
-    .replace('{{firma}}', data.firma || '');
-
-  // ===== GENERAR PDF =====
+  // ===== PDF =====
   const browser = await puppeteer.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
@@ -46,7 +80,8 @@ module.exports = async function generarPDF(data) {
   await page.setContent(html, { waitUntil: 'networkidle0' });
 
   const pdf = await page.pdf({
-    format: 'A4',
+    width: '1000px',
+    height: '1260px',
     printBackground: true
   });
 
