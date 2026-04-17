@@ -1,69 +1,68 @@
 const TelegramBot = require('node-telegram-bot-api');
 const generatePDF = require('./generate');
+const axios = require('axios');
 
 const token = process.env.BOT_TOKEN;
+
+if (!token) {
+  throw new Error('BOT_TOKEN no definido');
+}
+
 const bot = new TelegramBot(token, { polling: true });
 
-// ====== DATA TEMPORAL POR USUARIO ======
 const userData = {};
 
-// ====== INICIO ======
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
 
   userData[chatId] = {};
 
-  bot.sendMessage(chatId, 'Ingresa tu NOMBRE:');
+  bot.sendMessage(chatId, '👤 Nombre:');
 });
 
-// ====== MENSAJES ======
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
+  if (!userData[chatId] || !msg.text) return;
 
-  if (!userData[chatId]) return;
+  const data = userData[chatId];
 
-  const text = msg.text;
-
-  // flujo básico
-  if (!userData[chatId].nombre) {
-    userData[chatId].nombre = text;
+  if (!data.nombre) {
+    data.nombre = msg.text;
     return bot.sendMessage(chatId, 'Apellido paterno:');
   }
 
-  if (!userData[chatId].paterno) {
-    userData[chatId].paterno = text;
+  if (!data.paterno) {
+    data.paterno = msg.text;
     return bot.sendMessage(chatId, 'Apellido materno:');
   }
 
-  if (!userData[chatId].materno) {
-    userData[chatId].materno = text;
+  if (!data.materno) {
+    data.materno = msg.text;
     return bot.sendMessage(chatId, 'CURP:');
   }
 
-  if (!userData[chatId].curp) {
-    userData[chatId].curp = text;
+  if (!data.curp) {
+    data.curp = msg.text;
     return bot.sendMessage(chatId, 'Domicilio:');
   }
 
-  if (!userData[chatId].domicilio) {
-    userData[chatId].domicilio = text;
+  if (!data.domicilio) {
+    data.domicilio = msg.text;
 
-    // valores fijos por ahora
-    userData[chatId].sexo = 'H';
-    userData[chatId].estado = 'CDMX';
-    userData[chatId].registro = '2020';
-    userData[chatId].seccion = '1234';
-    userData[chatId].vigencia = '2030';
-    userData[chatId].clave = 'ABC123456';
+    // valores base
+    data.sexo = 'H';
+    data.estado = 'CDMX';
+    data.registro = '2020';
+    data.seccion = '1234';
+    data.vigencia = '2030';
+    data.clave = 'ABC123456';
 
-    return bot.sendMessage(chatId, 'Ahora envía tu FOTO');
+    return bot.sendMessage(chatId, '📸 Envía tu FOTO');
   }
 });
 
-// ====== FOTO ======
 bot.on('photo', async (msg) => {
   const chatId = msg.chat.id;
-
   if (!userData[chatId]) return;
 
   try {
@@ -72,14 +71,17 @@ bot.on('photo', async (msg) => {
 
     const url = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
 
-    // guardar imagen como base64
-    userData[chatId].foto = url;
-    userData[chatId].fotoMini = url;
-    userData[chatId].firma = url;
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    const base64 = Buffer.from(response.data).toString('base64');
 
-    bot.sendMessage(chatId, 'Generando PDF...');
+    const img = `data:image/jpeg;base64,${base64}`;
 
-    // 👇 AQUÍ SE USA DATA CORRECTAMENTE
+    userData[chatId].foto = img;
+    userData[chatId].fotoMini = img;
+    userData[chatId].firma = img;
+
+    bot.sendMessage(chatId, '⚙️ Generando INE...');
+
     const pdf = await generatePDF(userData[chatId]);
 
     await bot.sendDocument(chatId, pdf);
@@ -88,6 +90,6 @@ bot.on('photo', async (msg) => {
 
   } catch (err) {
     console.error(err);
-    bot.sendMessage(chatId, 'Error generando PDF');
+    bot.sendMessage(chatId, '❌ Error generando PDF');
   }
 });
