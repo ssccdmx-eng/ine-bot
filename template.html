@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+  margin: 0;
+}
+
+.card {
+  position: relative;
+  width: 1000px;
+  height: 600px;
+  font-family: Arial;
+}
+
+/* fondo */
+.bg {
+  position: absolute;
+  width: 100%;
+}
+
+/* foto */
+.photo {
+  position: absolute;
+  top: 180px;
+  left: 100px;
+  width: 200px;
+  height: 260px;
+  object-fit: cover;
+}
+
+/* texto */
+.text {
+  position: absolute;
+  left: 350px;
+  top: 200px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+  <img src="front.png" class="bg">
+
+  <img src="{{foto}}" class="photo">
+
+  <div class="text">
+    <h2>{{nombre}}</h2>
+    <h2>{{paterno}}</h2>
+    <h2>{{materno}}</h2>
+    <p>{{curp}}</p>
+  </div>
+
+</div>
+
+</body>
+</html>
