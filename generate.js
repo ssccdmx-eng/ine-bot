@@ -1,45 +1,53 @@
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
-const bwipjs = require('bwip-js');
+const axios = require('axios');
 
 module.exports = async function generatePDF(data) {
-
-  const doc = new PDFDocument({ size: [860, 540], margin: 0 });
+  const doc = new PDFDocument({ size: 'A4', margin: 20 });
 
   const buffers = [];
   doc.on('data', buffers.push.bind(buffers));
 
-  doc.rect(0, 0, 860, 540).fill('#ffffff');
+  // ===== QR SEGURO =====
+  const qrData = `${data.curp}|${data.nombre}`;
+  const qr = await QRCode.toBuffer(qrData, { width: 100 });
 
-  doc.image(data.foto, 60, 120, { width: 200 });
-  doc.image(data.firma, 60, 400, { width: 150 });
+  // ===== FOTO =====
+  const response = await axios.get(data.foto, { responseType: 'arraybuffer' });
+  const fotoBuffer = Buffer.from(response.data);
 
-  doc.fontSize(18).text(
-    `${data.nombre} ${data.paterno} ${data.materno}`,
-    300, 120
-  );
+  // ===== DISEÑO =====
+  doc.rect(0, 0, 595, 842).fill('#f5f5f5');
 
-  doc.fontSize(12);
-  doc.text(`CURP: ${data.curp}`, 300, 160);
-  doc.text(`Sexo: ${data.sexo}`, 300, 180);
-  doc.text(`Nacimiento: ${data.fechaNacimiento}`, 300, 200);
-  doc.text(`Domicilio: ${data.domicilio}`, 300, 220);
+  doc.fillColor('black')
+     .fontSize(18)
+     .text('CREDENCIAL GENERADA', 50, 40);
 
-  const qr = await QRCode.toBuffer(JSON.stringify(data));
-  doc.image(qr, 650, 120, { width: 140 });
-
-  const barcode = await bwipjs.toBuffer({
-    bcid: 'code128',
-    text: data.curp,
-    scale: 3,
-    height: 10
+  // FOTO
+  doc.image(fotoBuffer, 50, 100, {
+    width: 150,
+    height: 180
   });
 
-  doc.image(barcode, 550, 420, { width: 250 });
+  // DATOS
+  doc.fontSize(12);
+  doc.text(`Nombre: ${data.nombre}`, 250, 120);
+  doc.text(`Apellido: ${data.apellido}`, 250, 140);
+  doc.text(`CURP: ${data.curp}`, 250, 160);
+
+  // QR
+  doc.image(qr, 250, 200, { width: 100 });
+
+  // MARCA
+  doc.fillColor('gray')
+     .fontSize(8)
+     .text('Documento generado automáticamente', 50, 800);
 
   doc.end();
 
-  return await new Promise(resolve => {
-    doc.on('end', () => resolve(Buffer.concat(buffers)));
+  return await new Promise((resolve) => {
+    doc.on('end', () => {
+      resolve(Buffer.concat(buffers));
+    });
   });
 };
