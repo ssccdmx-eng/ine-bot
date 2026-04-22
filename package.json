@@ -11,8 +11,6 @@
     "pdfkit": "^0.15.0",
     "qrcode": "^1.5.3",
     "bwip-js": "^4.5.0",
-    "sharp": "^0.33.0",
-    "@vladmandic/face-api": "^1.7.14",
-    "canvas": "^2.11.2"
+    "sharp": "^0.33.0"
   }
 }
